@@ -10,20 +10,6 @@ for i = 1:length(ROI)
     blah = vertcat(ROI{i}{:});
     ROIcentroid(i,:) = floor(mean(blah,1));
 end
-% %% Traveling Waves Planer Grids + Imaging
-% ROIcentroid = {json_file.centroid}';ROIcentroid = cell2mat(ROIcentroid);
-% for i = 1:size(json_file,1)
-%     for ii = 1:length(json_file(i).coordinates)
-%         ROI{i,1}{ii,1} = json_file(i).coordinates(ii,1:2)';
-%     end
-% end
-% DeltaFoverF = full(C_df);
-% idx = size(C_df,1);
-% parfor i = 1:idx
-%     disp('Deconvolving using contrained metric...')
-%     [c(i,:), s(i,:), options] = deconvolveCa(full(C_df(i,:)));
-% end
-% dDeltaFoverF = s;
 %% Analysis
 addpath(genpath('main'));
 std_threshold = 6;
@@ -42,14 +28,6 @@ end
 
 % Perform shuffling and pairwise if data is small enough
 if size(DeltaFoverF,2)<2000    
-%     Spikes_shuffled = tempShuffle(Spikes,1000);
-%     Event_shuffled = spatialShuffle(Spikes,1000);
-%     surrogate = 10;
-%     Total_shuffled = allShuffle(Spikes,1000);
-%     [shufcoactive_cells,detected_spikes] = coactive_index(Spikes_shuffled,length(Spikes_shuffled));
-%     shuff_corr = correlation_dice(Event_shuffled);
-%     [shufvectorized,shufsim_index] = cosine_similarity(Spikes_shuffled,10);
-%     shufsim_index = shufsim_index-mean(mean(shufsim_index,2));
     factorCorrection = 10*floor(size(Spikes,2)/10); % Correct for frame size aquisition
     [vectorized,sim_index] = cosine_similarity(Spikes(:,1:factorCorrection),10);
     corr = correlation_dice(Spikes);
@@ -107,20 +85,6 @@ figure,hold on
 [~,I] = sort(cellfun(@length,Ensemble.ActivityCoords),'descend'); %sort max node size
 rankedActivityCoords = Ensemble.ActivityCoords(:,I);
 Ensemble.rankedActivityCoords = rankedActivityCoords;
-% for i = 1:15%size(Ensemble.ActivityCoords,2)
-%     
-%     x = rankedActivityCoords{i}(:,1);y = rankedActivityCoords{i}(:,2);
-%     k = boundary(x,y);
-%     x1 = interp1(1:length(x(k)),x(k),1:0.05:length(x(k)),'pchip');
-%     y1 = interp1(1:length(y(k)),y(k),1:0.05:length(y(k)),'pchip');
-%     x2 = smoothdata(x1,'gaussian',50);
-%     y2 = smoothdata(y1,'gaussian',50);
-%     plot(x2,y2,'Color',[0.5 0.5 0.5])
-%     scatter(x,y,4,'k','filled')
-%     
-% end
-%
-% ensembleVid(nolateSpikeEnsemble,AverageImage,ROIcentroid,'nolateSpikeEnsemble')
 % Now look at trial specific changes
 % Standard trial length is 360 frames ** old data set had 240 frames
 %%
@@ -142,66 +106,10 @@ if length(spikeTrials)<trialData.responsiveTrials.trialNum(end)
         (trialData.responsiveTrials.noLateSpikeTrials<=length(spikeTrials));
 end
 
-% figure,
-% for i = 1:length(spikeTrials)
-%     subplot(6,6,i),Show_Spikes(spikeTrials{i})
-% end
-
-
 figure,
-for i = 10:44
-    blah = spikeTrials{i};
-    idx = 200+randperm(61,61);
-    blah(:,90:150) = blah(:,idx);
-    blah(:,1:90) = 0;
-    blah(:,180:360)=0;
-    %     Show_Spikes(spikeTrials{i}),hold on
-    Show_Spikes(blah),hold on
-end
-% generate ROC for connectivity
-% thresh = 0;
-% connectedNum = [];
-% step = 0.025;
-% for i = 1:(1/step)+1
-%     Connected_ROI = Connectivity_dice(corr,ROI,thresh);
-%     connectedNum(i) = size(Connected_ROI,1);
-%     thresh = thresh+step;
-% end
-% figure,plot(0:step:1,connectedNum);
-
-%
-% [vectorized,sim_index] = cosine_similarity(horzcat(spikeTrials{trialData.responsiveTrials.lateSpikeTrials(1:5)} ),10);
-%
-% count = 1;
-% for i = 1:49
-%     if ~isempty(lateSpikeEnsemble.ActivityCentroid{i}) 
-%         euclideanCentroid(count) = sqrt(lateSpikeEnsemble.ActivityCentroid{i}(1)^2+lateSpikeEnsemble.ActivityCentroid{i}(2)^2);
-%         count = count+1;
-%     end
-% end
-% %%
-% count = 1;
-% for i = 1:49
-%     if ~isempty(nolateSpikeEnsemble.ActivityCentroid{i}) 
-%         euclideanCentroid(count) = sqrt(nolateSpikeEnsemble.ActivityCentroid{i}(1)^2+nolateSpikeEnsemble.ActivityCentroid{i}(2)^2);
-%         count = count+1;
-%     end
-% end
-
-% figure,plot(normNodeWeight,normNodeProbability,'.');box off
-% xline(nodeWThresh,'k--');
-% yline(nodePThresh,'k--');
-%
-% ls_ls = []
-% Connected_ROI = [];
-% for i = t2
-%     corr = correlation_dice(spikeTrials{i}(lateSpikeCritNodes,:));
-%     Connected_ROI{i} = Connectivity_dice(corr,ROI,0.5);
-% end
-% ls_ls = vertcat(Connected_ROI{:});
-% figure,
-% Cell_Map_Dice(AverageImage,ls_ls,ROIcentroid(lateSpikeCritNodes,:),4,1)
-
+ for i = 1:length(spikeTrials)
+   subplot(6,6,i),Show_Spikes(spikeTrials{i})
+ end
 % Late vs no Late spike ensembles
 [lateSpikeEnsemble, nolateSpikeEnsemble] =...
     travelingWaveEnsemble(spikeTrials,trialData.responsiveTrials.lateSpikeTrials,trialData.responsiveTrials.noLateSpikeTrials,ROIcentroid,AverageImage);
@@ -224,13 +132,9 @@ Ls = [];
 % figure,
 count = 1;
 for i = trialData.responsiveTrials.lateSpikeTrials  %t1
-%     corr = correlation_dice(spikeTrials{i});
-%     Connected_ROI{count} = Connectivity_dice(corr,ROI,0.3);
-%     [NumActiveNodes{count},NodeList{count},NumNodes{count},NumEdges{count},SpatialCentroid{count},SpatialCentroidVariance{count},ActivityCentroid{count},ActivityCentroidVariance{count}, ActivityCoords{count}]...
-%         = Network_Analysis(ROIcentroid,Connected_ROI{count});
     [~,sim_index] = cosine_similarity(spikeTrials{i},10);
 %     subplot(5,4,count),imagesc(sim_index),colormap(jet)
-    Ls(count) = mean(sim_index(sim_index>0.1),'all'); %mean center
+    Ls(count) = mean(sim_index(sim_index),'all'); %mean center
     count = count+1;
 end
 % t1 = vertcat(simValue{:});
@@ -244,10 +148,6 @@ nLs = [];
 count = 1;
 % % figure,
 for i = trialData.responsiveTrials.noLateSpikeTrials%t2
-%     corr = correlation_dice(spikeTrials{i});
-%     Connected_ROI{i} = Connectivity_dice(corr,ROI,0.3);
-%     [NumActiveNodes{i},NodeList{i},NumNodes{i},NumEdges{i},SpatialCentroid{i},SpatialCentroidVariance{i},ActivityCentroid{i},ActivityCentroidVariance{i}, ActivityCoords{i}]...
-%         = Network_Analysis(ROIcentroid,Connected_ROI{i});
     [~,sim_index] = cosine_similarity(spikeTrials{i},10);
 %     subplot(5,4,count),imagesc(sim_index),colormap(jet)
     nLs(count) = mean(sim_index(sim_index>0),'all');
